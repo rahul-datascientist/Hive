@@ -1,0 +1,725 @@
+﻿jps to get hadoop process running
+
+--hive to start hive
+
+--control C to exit hive
+
+--Show databases -to show database
+
+
+--connect beeline
+
+beeline -u jdbc:hive2://
+
+--create new database 
+
+create database practice;
+
+--work within database
+
+use practice;
+
+--create table
+
+ create table customers (
+ id bigint,
+ name string,
+ address string
+ );
+ 
+ --list tables
+ 
+ show tables;
+ 
+ --describe table 
+ 
+ describe customers;
+ 
+ --insert into table(mapreduce)
+ 
+insert into customers values (1111,"John","WA");
+insert into customers values (2222,"Emily","WA");
+insert into customers values (3333,"Rick","WA");
+insert into customers values (4444,"Jane","CA");
+insert into customers values (5555,"Amit","NJ");
+insert into customers values (6666,"Nina","NY");
+
+--Filter clause 
+
+select * from customers where address="WA"; 
+
+select * from customers where address="WA" and name="John"; 
+
+select * from customers where address="WA" or name="John"; 
+
+select name, address from customers where address = "WA" and id > 2222;
+
+--Can select particular column like id and name;
+
+select id,name from customers;
+
+--Supports distinct(mapreduce)
+
+select DISTINCT address from customers;
+
+--support order by(mapreduce)
+
+select * from customers order by address;
+
+--Support count,average etc.(mapreduce)
+
+select count(*) from customers;
+
+
+build in functon or UDFs function list can be found t below location
+
+https://cwiki.apache.org/confluence/display/Hive/LanguageManual+UDF
+
+--Supports Group by clause
+
+select address,count(*) as address_cnt
+from customers
+group by address;
+
+--Limit number of rows
+
+select * from customers limit 1;
+
+Terminal
+————————
+--Execute query from beeline commond line (mapreduce)
+bin/beeline -u jdbc:hive2:// -e "select * from customers"
+
+inside beeline source test.hql
+select * from customers;
+--Execute script from beeline commond line (mapreduce)
+bin/beeline -u jdbc:hive2:// -f test.hql 
+
+
+Hive
+————
+-- create table if not exists in database
+
+create table if not exists orders (
+id bigint, 
+product_id string, 
+customer_id bigint, 
+quantity int, 
+amount double
+);
+
+insert into orders values (
+111111,
+"phone",
+1111,
+3,
+1200
+);
+
+insert into orders values (
+111112, 
+"camera", 
+1111, 
+1, 
+5200
+), (
+111113, 
+"broom", 
+1111, 
+1, 
+10
+), (
+111114,
+"broom",
+2222,
+2,
+20
+), (
+111115,
+"t-shirt",
+4444,
+2,
+66
+);
+
+--inner join (mapreduce)
+
+select employee_id,first_name,job_id,dept.department_name
+from employees emp join departments dept
+on (emp.department_id=dept.department_id); --72 rows
+
+--left Join  (mapreduce)
+
+select employee_id,first_name,job_id,dept.department_name
+from employees emp left join departments dept
+on (emp.department_id=dept.department_id)
+order by employee_id; --73 rows
+
+select employee_id,first_name,job_id,dept.department_name
+from departments dept  left join employees emp
+on (emp.department_id=dept.department_id);--90 rows
+
+--Right outer join  (mapreduce)
+
+select employee_id,first_name,job_id,dept.department_name
+from departments dept  right join employees emp
+on (emp.department_id=dept.department_id);--73 rows
+
+--Full outer join  (mapreduce)
+select employee_id,first_name,job_id,dept.department_name
+from departments dept  FULL OUTER join employees emp
+on (emp.department_id=dept.department_id);--91 rows
+
+
+--left semi(mapreduce)
+--Find all the department where at least one employee exist (like exists in oracle)
+
+select *  
+from departments  left semi join employees
+  ON (employees.department_id = departments.department_id); --10 rows
+  
+--Group by(mapreduce) 
+
+SELECT e.department_id,j.job_title,sum(e.salary)
+FROM employees e join jobs j
+on(e.job_id=j.job_id)
+group by e.department_id,j.job_title;
+
+--having clause(mapreduce)
+
+SELECT e.department_id,j.job_title,sum(e.salary)
+FROM employees e join jobs j
+on(e.job_id=j.job_id)
+group by e.department_id,j.job_title
+having sum(e.salary)>20000;
+
+--GROUPING SETS
+
+--Example 1
+
+SELECT a, b, SUM(c) FROM t1 GROUP BY a, b GROUPING SETS ((a,b),a);
+
+--equivelent query to above query
+SELECT a, b, SUM(c) FROM t1 GROUP BY a, b
+UNION ALL
+SELECT a, NULL b, SUM(c) FROM t1 GROUP BY a;
+
+--Example 2
+SELECT a, b, SUM(c) FROM t1 GROUP BY a, b GROUPING SETS (a,b,());
+
+--equivelent query to above query
+
+SELECT a, NULL, SUM(c) FROM t1 GROUP BY a
+UNION ALL
+SELECT NULL a, b, SUM(c) FROM t1 GROUP BY b
+UNION ALL
+SELECT NULL a, NULL b, SUM(c) FROM t1;
+
+--cube
+SELECT a, b, c, SUM(d) FROM t1 GROUP BY a, b WITH CUBE;
+
+--equivelent query to above query
+
+SELECT a, b, c, SUM(d) FROM t1 GROUP BY a, b, c GROUPING SETS
+((a,b,c),(a,b),(b,c),(a,c),a,b,c,());
+
+--Rollup
+
+SELECT a, b, c, SUM(d) FROM t1 GROUP BY a, b WITH ROLLUP;
+
+--equivelent query to above query
+
+SELECT a, b, c, SUM(d) FROM t1 GROUP BY a, b, c GROUPING SETS
+((a,b,c),(a,b),a,());
+
+--Creating databases and Tables
+
+--how hive store the data
+
+Hive
+—————
+
+show databases;
+
++----------------+--+
+| database_name  |
++----------------+--+
+| default        |
+| practice       |
++----------------+--+
+
+use practice;
+
+show tables;
++------------+--+
+|  tab_name  |
++------------+--+
+| customers  |
+| orders     |
++------------+--+
+
+
+Terminal
+————————
+
+[cloudera@quickstart ~]$hadoop fs  -ls /user/hive/warehouse
+
+[cloudera@quickstart ~]$ hadoop fs  -ls /user/hive/warehouse
+drwxrwxrwx   - cloudera supergroup          0 2017-07-19 22:45 /user/hive/warehouse/orders (order table is created in default database in this op directories)
+drwxrwxrwx   - cloudera supergroup          0 2017-07-19 23:08 /user/hive/warehouse/practice.db                                                                                   use/practice.db
+
+
+[cloudera@quickstart ~]$hadoop fs -ls /user/hive/warehouse/practice.db
+
+Found 2 items
+drwxrwxrwx   - cloudera supergroup          0 2017-07-18 23:17 /user/hive/warehouse/practice.db/customers
+drwxrwxrwx   - cloudera supergroup          0 2017-07-19 23:17 /user/hive/warehouse/practice.db/orders
+
+[cloudera@quickstart ~]$hadoop fs -ls /user/hive/warehouse/practice.db/customers(shows files containing data.Number of files has nothing to do no. of we have inserted the data)
+
+Found 5 items
+-rwxrwxrwx   1 cloudera supergroup         13 2017-07-18 23:10 /user/hive/warehouse/practice.db/customers/000000_0
+-rwxrwxrwx   1 cloudera supergroup         14 2017-07-18 23:14 /user/hive/warehouse/practice.db/customers/000000_0_copy_1
+-rwxrwxrwx   1 cloudera supergroup         13 2017-07-18 23:15 /user/hive/warehouse/practice.db/customers/000000_0_copy_2
+-rwxrwxrwx   1 cloudera supergroup         13 2017-07-18 23:16 /user/hive/warehouse/practice.db/customers/000000_0_copy_3
+-rwxrwxrwx   1 cloudera supergroup         13 2017-07-18 23:17 /user/hive/warehouse/practice.db/customers/000000_0_copy_4
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/hive/warehouse/practice.db/customers/000000_0
+1111JohnWA
+
+--Dropping table 
+drop table test;
+
+Creating External Tables in Hive
+
+nano products.csv 
+
+--creating direcotory in HDFS where we gone store this file
+hadoop fs -mkdir /data
+
+--copy file to HDFS directory
+hadoop fs -copyFromLocal products.csv /data/ 
+--checking data file is copied to HDFS data directory
+hadoop fs -ls /data/
+ Found 1 items
+-rw-r--r--   1 cloudera supergroup        122 2017-08-06 04:35 /data/products.csv
+
+Hive
+————
+create external table if not exists products (
+id string,
+title string,
+cost float
+)
+comment "Table to store product information sold in stores"
+row format delimited fields terminated by ','
+stored as textfile
+location '/data/';
+
+--External table will not be present in /user/hive/warehouse/ directory
+select * from products;
+
+describe formatted customers;
+(Data should be in the warehouse, table type should be managed_table)
+
+describe formatted products;
+(Data should be in the HDFS location where we've placed it, table type should be external_table)
+
+--create table fresh_products like products(same as CTAS in oracle without data like 1=2)
+create table if not exists fresh_products like products;
+
+--Rename table
+alter table fresh_products 
+rename to freshproducts
+
+--Add columns to existing table with column comments
+
+alter table freshproducts add columns (
+expiry_date date 
+comment "Expiry date of fresh produce"
+);
+
+--change postion of the column and id column data type to float
+alter table freshproducts 
+change column id id float
+after title;
+
+--Temporary Table(Temporary tables are active within the Hive session and as soon as that session ends, the table and all its contents are deleted )
+
+create temporary table test_customers 
+like customers;
+
+show tables;
+
+describe test_customers;
+
+insert into test_customers values (
+9999,
+"Jill",
+"MN"
+);
+
+--Loading data in table from csv files(local directory)
+
+Create freshproducts.csv with fresh produce information
+
+
+load data local inpath 'freshproducts.csv'
+into table freshproducts; 
+(This is from a local path(current directory) and not HDFS)
+
+--Loading data in table from csv files(HDFS directory)
+
+(Copy file to HDFS direcotory)
+hadoop fs -copyFromLocal freshproducts.csv /data/
+
+load data inpath '/data/freshproducts.csv' into table freshproducts; 
+
+select * from freshproducts;
+
+(Notice the data is appended, and both files are present in the warehouse directory)
+
+Terminal
+————————
+
+hadoop fs -ls /user/hive/warehouse/practice.db
+
+hadoop fs -ls /user/hive/warehouse/practice.db/freshproducts
+
+hadoop fs -cat /user/hive/warehouse/practice.db/freshproducts/*
+
+(The CSV file has been moved into the warehouse directory)
+
+(From hdfs)
+
+--truncating table and then Loading data in table from csv files(HDFS directory) by using overwrite keyword
+load data local inpath 'freshproducts.csv'
+overwrite into table freshproducts; 
+
+select * from freshproducts;
+
+--Inserting data into table from another table(mapreduce)
+insert into table products
+select id, title, cost from freshproducts;
+
+--truncating table and then Inserting data into table from another table(mapreduce)
+insert overwrite table products
+select id, title, cost from freshproducts;
+
+--Multi-table Insert and Deleting Data from Tables
+
+create table product_name (id string, name string);
+
+create table product_cost (id string, cost float);
+
+--(mapreduce)
+from products
+insert overwrite table product_name
+select id, title
+insert into table product_cost
+select id, cost;
+
+select * from product_name;
+
+select * from product_cost;
+
+--union(No dupes)
+
+select * from products
+union
+select * from freshproducts;
+(Schema from both sides should match)
+
+
+select * from products
+union
+select id, title, cost from freshproducts;
+
+(No dupes)
+
+select * from products 
+union all
+select id, title, cost from freshproducts;
+
+(Dupes preserved)
+
+
+--subquery
+
+--in/not in 
+
+select distinct department_name 
+from departments 
+where department_id in (select department_id as dept_id from employees);
+
+-- query faling Unsupported SubQuery Expression 'department_id': Correlating expression cannot contain unqualified column references. (state=42000,code=10249)
+
+select *
+from departments 
+where department_id in (10,20,30,100);
+
+
+--exist and not exist (supported after .13 version)
+
+select department_name 
+from departments 
+where exists 
+		(select department_id 
+		from employees 
+		where department_id=employees.department_id 
+		)
+		
+		
+--views
+
+create view v_dept 
+as 
+ select * 
+ from departments 
+ where department_id in (10,20,30,100);
+
+
+
+--Collection in Hive
+
+--Create a table with array data types
+
+create table mobilephones (
+id string,
+title string,
+cost float,
+colors array<string>,
+screen_size array<float>
+);
+
+insert into table mobilephones
+select "redminote7", "Redmi Note 7", 300, 
+array("white", "silver", "black"), array(float(4.5))
+UNION ALL
+select "motoGplus", "Moto G Plus", 200, array("black", "gold"), 
+array(float(4.5), float(5.5));
+
+(This causes an error because of CBO)
+
+
+select * from mobilephones;
+
+select id, colors from mobilephones;
+--select first element of array
+select id, colors[0] from mobilephones;
+
+--Create atable with array data types and load from file
+
+column are seperated by comma and each entities in array is seperated by hash 
+
+create table mobilephones_file (
+id string,
+title string,
+cost float,
+colors array<string>,
+screen_size array<float>
+)
+row format delimited fields terminated by ','
+collection items terminated by '#';
+
+load data local inpath 'mobilephones_file.csv'
+into table mobilephones_file;
+
+alter table freshproducts add columns (
+expiry_date date 
+comment "Expiry date of fresh produce"
+);
+
+Map
+
+--unordered colection of key value pair-no fixed size-vslue is access using unique key
+--key value pair are seperated by colon(:)
+
+drop table mobilephones_file;
+create table mobilephones_file (
+id string,
+title string,
+cost float,
+colors array<string>,
+screen_size array<float>,
+features map<string, boolean>
+)
+row format delimited fields terminated by ','
+collection items terminated by '#'
+map keys terminated by ':';
+
+--Edit the file to add features
+
+load data local inpath 'mobilephones_file.csv'
+into table mobilephones_file;
+
+
+select id, features['camera'] from mobilephones_file;
+
+
+Struct
+
+--Struct is equivelent to class in programming language-logical grouping of data-can have diffrent data type 
+-can refer to any number of values-each value refer by a name  
+
+create table mobilephones_file (
+id string,
+title string,
+cost float,
+colors array<string>,
+screen_size array<float>,
+features map<string, boolean>,
+information struct<battery:string,camera:string>
+)
+row format delimited fields terminated by ','
+collection items terminated by '#'
+map keys terminated by ':';
+
+
+Edit the file to add information
+
+load data local inpath 'mobilephones_file.csv'
+into table mobilephones_file;
+
+select id, features, information 
+from mobilephones_file;
+select id, features['camera'], information.battery 
+from mobilephones_file;
+select id, features['camera'] as CameraPresent, information.battery 
+from mobilephones_file;
+
+
+Write a Custom UDF for Hive in Python(Simple Example Use Cases MovieLens User Ratings)
+First, create a table with tab-delimited text file format:
+
+
+--download the data files from MovieLens 100k 
+
+Terminal
+————————
+
+wget http://files.grouplens.org/datasets/movielens/ml-100k.zip
+
+
+--Unzip the data files:
+
+unzip ml-100k.zip
+
+Hive
+————
+
+CREATE TABLE u_data (
+  userid INT,
+  movieid INT,
+  rating INT,
+  unixtime STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+
+--load u.data into the table that was just created:
+
+LOAD DATA LOCAL INPATH 'data/u.data'
+OVERWRITE INTO TABLE u_data;
+Count the number of rows in table u_data:
+
+SELECT COUNT(*) FROM u_data;
+Note that for older versions of Hive which don't include HIVE-287, you'll need to use COUNT(1) in place of COUNT(*).
+
+Terminal
+————————
+
+--Now we can do some complex data analysis on the table u_data:
+
+
+Create weekday_mapper.py at /home/cloudera/scripts/weekday_mapper.py
+
+import sys
+import datetime
+
+for line in sys.stdin:
+  line = line.strip()
+  userid, movieid, rating, unixtime = line.split('\t')
+  weekday = datetime.datetime.fromtimestamp(float(unixtime)).isoweekday()
+  print '\t'.join([userid, movieid, rating, str(weekday)])
+Use the mapper script:
+
+
+
+Hive
+————
+
+CREATE TABLE u_data_new (
+  userid INT,
+  movieid INT,
+  rating INT,
+  weekday INT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t';
+
+add FILE /home/cloudera/scripts/weekday_mapper.py;
+
+INSERT OVERWRITE TABLE u_data_new
+SELECT
+  TRANSFORM (userid, movieid, rating, unixtime)
+  USING 'python weekday_mapper.py'
+  AS (userid, movieid, rating, weekday)
+FROM u_data;
+
+SELECT weekday, COUNT(*)
+FROM u_data_new
+GROUP BY weekday;
+
+Partitioning data setup
+
+  
+--Managed partitioned table 
+
+--Static Partitioning in Hive
+
+drop table employee_part;
+
+create table if not exists employee_part (
+id int, name String,
+dept String, yoj_col String)
+PARTITIONED BY (year STRING)
+row format delimited fields terminated by ','
+stored as textfile
+location '/data1/';
+
+
+LOAD DATA LOCAL INPATH '/home/cloudera/data/emp_data/2013'
+      INTO TABLE employee_part
+      PARTITION (year='2013');
+LOAD DATA LOCAL INPATH '/home/cloudera/data/emp_data/2012'
+      INTO TABLE employee_part
+      PARTITION (year='2012');
+	  
+select * from employee_part;
+
+--Dynamic partition in hive
+
+
+hadoop fs -mkdir /data/log
+ 
+hadoop fs -copyFromLocal /home/cloudera/data/logs/log_2012613_161117.log /data/log
+
+hadoop fs -copyFromLocal /home/cloudera/data/logs/log_2013720_162256.log /data/log
+
+
+ 
+CREATE EXTERNAL TABLE staging (logtime STRING, userid INT, ip STRING, page STRING, ref STRING, os STRING, os_ver STRING, agent STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LOCATION '/data/log';
+
+CREATE TABLE page_views (logtime STRING, userid INT, ip STRING, page STRING, ref STRING, os STRING, os_ver STRING, agent STRING)
+PARTITIONED BY (y STRING, m STRING, d STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t';
+
+SET hive.exec.dynamic.partition.mode=nonstrict;
+
+INSERT overwrite TABLE page_views PARTITION (y, m, d)
+SELECT logtime, userid, ip, page, ref, os, os_ver, agent, substr(logtime, 7, 4), substr(logtime, 1, 2), substr(logtime, 4, 2)
+FROM staging;
