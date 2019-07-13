@@ -443,6 +443,9 @@ select id, title, cost from freshproducts;
 
 (Dupes preserved)
 
+select * from sales where country like 'EU~%'; "HIVE SUPPORTS LIKE"
+
+select * from sales where country not like 'EU~%'; "HIVE DOES NOT SUPPORT"
 
 --subquery
 
